@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MAROS SIGAP — Single Page Prototype (Extended)</title>
+
+    <!-- Bootstrap CSS (CDN) -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Leaflet CSS (CDN) -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+
+    <style>
+      /* =========================
+       THEME & LAYOUT
+       ========================= */
+      :root {
+        --bg: #f5f9ff;
+        --blue-1: #007bff;
+        --blue-2: #0056d6;
+        --soft: #eef6ff;
+        --accent: #ff9f1c;
+        --muted: #6c757d;
+        --card-shadow: 0 8px 28px rgba(2, 25, 68, 0.06);
+        --glass: rgba(255, 255, 255, 0.7);
+        --radius: 12px;
+        --transition: 300ms cubic-bezier(0.2, 0.9, 0.25, 1);
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: "Inter", "Poppins", system-ui, -apple-system, "Segoe UI",
+          Roboto, "Helvetica Neue", Arial;
+        background: linear-gradient(180deg, var(--bg), #ffffff 60%);
+        color: #04263a;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* NAVBAR */
+      nav.navbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 999;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 6px 20px rgba(7, 55, 99, 0.06);
+        backdrop-filter: blur(6px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .brand .logo-box {
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--blue-1), var(--blue-2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 800;
+        box-shadow: 0 6px 18px rgba(0, 91, 204, 0.12);
+      }
+      .brand h6 {
+        margin: 0;
+        font-weight: 800;
+        font-size: 16px;
+      }
+      .brand p {
+        margin: 0;
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      main.container {
+        padding-top: 84px; /* space for navbar */
+        max-width: 1200px;
+      }
+
+      /* SECTIONS - SPA */
+      section.page {
+        display: none;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity var(--transition), transform var(--transition);
+        padding: 36px 12px;
+        min-height: calc(100vh - 84px);
+      }
+      section.page.active {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* INTRO */
+      .intro-card {
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.9),
+          rgba(240, 248, 255, 0.85)
+        );
+        border-radius: var(--radius);
+        padding: 36px;
+        box-shadow: var(--card-shadow);
+        display: flex;
+        gap: 24px;
+        align-items: center;
+        overflow: hidden;
+      }
+      .intro-left {
+        flex: 1;
+      }
+      .intro-right {
+        flex: 1;
+        text-align: center;
+      }
+      .intro-cta {
+        margin-top: 20px;
+      }
+
+      /* MAP & SIDEBAR */
+      .app-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 20px;
+        align-items: start;
+      }
+      @media (max-width: 1000px) {
+        .app-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* NOTE: leaflet needs an explicit height on #map */
+      #map {
+        width: 100%;
+        min-height: 480px;
+        height: 480px; /* ensure explicit height so tiles render correctly */
+        border-radius: 14px;
+        box-shadow: var(--card-shadow);
+        overflow: hidden;
+        border: 1px solid rgba(3, 48, 88, 0.04);
+      }
+
+      .panel {
+        background: white;
+        border-radius: 12px;
+        box-shadow: var(--card-shadow);
+        padding: 16px;
+        border: 1px solid rgba(3, 48, 88, 0.03);
+      }
+
+      /* forms */
+      label.small {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .required {
+        color: #e03131;
+        font-weight: 700;
+        margin-left: 4px;
+      }
+
+      .btn-brand {
+        background: linear-gradient(90deg, var(--blue-1), var(--blue-2));
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 10px 16px;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .btn-brand:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(3, 78, 162, 0.12);
+      }
+
+      /* REPORT LIST */
+      .report-item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(3, 48, 88, 0.03);
+        transition: background var(--transition), transform 150ms ease;
+      }
+      .report-item:hover {
+        background: #f7fbff;
+        transform: translateY(-3px);
+      }
+      .badge-pending {
+        background: #f03e3e;
+        color: white;
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+      }
+      .badge-processing {
+        background: #ff9f1c;
+        color: white;
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+      }
+      .badge-done {
+        background: #28a745;
+        color: white;
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+      }
+
+      .small-muted {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      /* SUCCESS */
+      .success-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        min-height: 60vh;
+      }
+      .success-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 60px;
+        background: linear-gradient(135deg, #e6fbf0, #d9f7ee);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 46px;
+        color: #198754;
+        box-shadow: 0 10px 30px rgba(6, 123, 67, 0.08);
+      }
+
+      /* FOOTER */
+      footer.site-foot {
+        margin-top: 20px;
+        padding: 20px 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      /* Modal-like detail card */
+      .detail-card {
+        position: fixed;
+        right: 28px;
+        bottom: 28px;
+        width: 320px;
+        max-width: calc(100% - 48px);
+        border-radius: 12px;
+        background: white;
+        padding: 12px;
+        box-shadow: 0 18px 48px rgba(4, 38, 63, 0.12);
+        display: none;
+        z-index: 1200;
+      }
+      .detail-card.active {
+        display: block;
+        animation: slideUp 360ms cubic-bezier(0.2, 0.9, 0.25, 1);
+      }
+      @keyframes slideUp {
+        from {
+          transform: translateY(10px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* tiny helpers */
+      .muted {
+        color: var(--muted);
+      }
+      .img-preview {
+        width: 100%;
+        border-radius: 8px;
+        margin-top: 8px;
+        border: 1px solid rgba(3, 48, 88, 0.04);
+      }
+      .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <div class="brand">
+          <div class="logo-box">MS</div>
+          <div>
+            <h6>MAROS SIGAP</h6>
+            <p>Sistem Informasi Geografis & Pelaporan Akses Publik</p>
+          </div>
+        </div>
+
+        <div class="ms-auto d-flex gap-2 align-items-center">
+          <button id="gotoIntro" class="btn btn-link text-decoration-none">
+            Beranda
+          </button>
+          <button id="gotoMain" class="btn btn-link text-decoration-none">
+            Laporkan
+          </button>
+          <button id="adminToggle" class="btn btn-outline-secondary btn-sm">
+            Admin: OFF
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="container">
+      <!-- PAGE 1: INTRO -->
+      <section id="page-intro" class="page active">
+        <div class="intro-card">
+          <div class="intro-left">
+            <h2 class="text-primary">
+              Selamat datang di
+              <span style="font-weight: 900">MAROS SIGAP</span>
+            </h2>
+            <p class="muted">
+              MAROS SIGAP membantu warga Kabupaten Maros melaporkan masalah
+              fasilitas publik (jalan, lampu jalan, drainase, fasilitas umum)
+              langsung lewat peta. Laporan dapat dilengkapi foto dan lokasi
+              akurat sehingga proses tanggap darurat dan perbaikan dapat
+              berlangsung lebih cepat.
+            </p>
+
+            <div class="intro-cta">
+              <button id="startReport" class="btn btn-brand btn-lg">
+                Mulai Lapor Sekarang
+              </button>
+              <button id="howItWorks" class="btn btn-outline-primary ms-2">
+                Cara Kerja
+              </button>
+            </div>
+
+            <div style="margin-top: 18px; color: var(--muted)">
+              <strong>Fitur utama:</strong>
+              <ul style="margin-top: 8px">
+                <li>Map interaktif & pelaporan lokasi</li>
+                <li>Upload foto bukti</li>
+                <li>Daftar laporan & riwayat (local demo)</li>
+                <li>Status laporan & admin mock-up</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="intro-right">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/2/2c/Maros_Regency_Official_Logo.png"
+              alt="Maros"
+              width="380"
+              style="
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(3, 48, 88, 0.06);
+              "
+            />
+            <p class="small-muted" style="margin-top: 12px">
+              Kabupaten Maros — Prototype
+            </p>
+          </div>
+        </div>
+
+        <div style="height: 18px"></div>
+
+        <div class="panel mt-4">
+          <h5>Detail Teknis Singkat</h5>
+          <p class="muted">
+            Prototype ini dibuat dengan HTML/CSS/JS,
+            <strong>Leaflet</strong> (OpenStreetMap) untuk peta, dan
+            <strong>localStorage</strong> sebagai penyimpanan demo. Untuk
+            deployment nyata, API backend & DB (contoh: Node.js + PostgreSQL /
+            Firebase) direkomendasikan.
+          </p>
+        </div>
+      </section>
+
+      <!-- PAGE 2: APP -->
+      <section id="page-main" class="page">
+        <div class="app-grid">
+          <!-- MAP -->
+          <div>
+            <div id="map" class="mb-3"></div>
+            <div class="d-flex gap-2 align-items-center">
+              <button id="locateBtn" class="btn btn-sm btn-light">
+                📍 Gunakan Lokasi Saya
+              </button>
+              <button id="pickManual" class="btn btn-sm btn-light">
+                ➕ Tandai Lokasi Manual
+              </button>
+              <div class="ms-auto small-muted">
+                Total laporan: <strong id="totalCount">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- SIDEBAR -->
+          <aside>
+            <div class="panel">
+              <h5>Laporkan Masalah</h5>
+
+              <form id="formReport" class="mt-2">
+                <div class="mb-2">
+                  <label class="small"
+                    >Nama Pelapor <span class="required">*</span></label
+                  >
+                  <input
+                    id="inpName"
+                    class="form-control form-control-sm"
+                    placeholder="Nama (opsional)"
+                  />
+                </div>
+
+                <div class="mb-2">
+                  <label class="small"
+                    >Kategori <span class="required">*</span></label
+                  >
+                  <select
+                    id="inpCategory"
+                    class="form-select form-select-sm"
+                    required
+                  >
+                    <option value="">-- Pilih Kategori --</option>
+                    <option value="Jalan">Jalan Rusak</option>
+                    <option value="Lampu">Lampu Jalan Mati</option>
+                    <option value="Drainase">Drainase Tersumbat</option>
+                    <option value="Sampah">Sampah Menumpuk</option>
+                    <option value="Fasilitas">Fasilitas Umum</option>
+                  </select>
+                </div>
+
+                <div class="mb-2">
+                  <label class="small"
+                    >Deskripsi <span class="required">*</span></label
+                  >
+                  <textarea
+                    id="inpDesc"
+                    class="form-control form-control-sm"
+                    rows="3"
+                    placeholder="Jelaskan singkat masalahnya..."
+                    required
+                  ></textarea>
+                </div>
+
+                <div class="mb-2">
+                  <label class="small">Foto (opsional)</label>
+                  <input
+                    id="inpPhoto"
+                    type="file"
+                    accept="image/*"
+                    class="form-control form-control-sm"
+                  />
+                </div>
+
+                <div class="mb-2">
+                  <label class="small"
+                    >Koordinat (klik peta atau isi manual)
+                    <span class="required">*</span></label
+                  >
+                  <div class="d-flex gap-2">
+                    <input
+                      id="inpLat"
+                      class="form-control form-control-sm"
+                      placeholder="Latitude"
+                    />
+                    <input
+                      id="inpLng"
+                      class="form-control form-control-sm"
+                      placeholder="Longitude"
+                    />
+                  </div>
+                </div>
+
+                <div class="d-grid mt-2">
+                  <button class="btn-brand" type="submit">Kirim Laporan</button>
+                </div>
+              </form>
+
+              <hr />
+
+              <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Daftar Laporan</h6>
+                <button id="clearAll" class="btn btn-outline-danger btn-sm">
+                  Reset
+                </button>
+              </div>
+
+              <div
+                id="listReports"
+                style="margin-top: 12px; max-height: 350px; overflow: auto"
+              >
+                <!-- report items injected here -->
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- PAGE 3: SUCCESS -->
+      <section id="page-success" class="page">
+        <div class="panel">
+          <div class="success-wrap">
+            <div class="success-circle">✓</div>
+            <h3>Laporan Anda Telah Berhasil Dikirim!</h3>
+            <p class="muted">
+              Terima kasih sudah berpartisipasi. Tim terkait akan meninjau dan
+              menindaklanjuti laporan Anda.
+            </p>
+            <div>
+              <button id="btnHomeFromSuccess" class="btn-brand">
+                Kembali ke Beranda
+              </button>
+              <button id="btnViewReports" class="btn btn-outline-primary ms-2">
+                Lihat Daftar Laporan
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      © 2025 MAROS SIGAP — Prototype • dibuat untuk lomba & demo
+    </footer>
+
+    <!-- DETAIL CARD (floating) -->
+    <div id="detailCard" class="detail-card">
+      <div class="flex-between">
+        <strong id="detailCategory">Kategori</strong>
+        <div
+          id="detailStatus"
+          class="badge badge-sm"
+          style="font-weight: 700; padding: 6px 8px; border-radius: 8px"
+        ></div>
+      </div>
+      <div style="margin-top: 8px" id="detailDesc">Deskripsi singkat</div>
+      <img
+        id="detailImg"
+        class="img-preview"
+        src=""
+        alt=""
+        style="display: none"
+      />
+      <div class="muted" style="margin-top: 8px" id="detailMeta">
+        oleh: - • waktu
+      </div>
+      <div class="d-flex gap-2 mt-2">
+        <button id="btnMarkProcessing" class="btn btn-sm btn-outline-warning">
+          Set Diproses
+        </button>
+        <button id="btnMarkDone" class="btn btn-sm btn-outline-success">
+          Set Selesai
+        </button>
+        <button id="btnDelete" class="btn btn-sm btn-outline-danger ms-auto">
+          Hapus
+        </button>
+      </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      /***********************************************
+       * MAROS SIGAP - Single File Extended SPA
+       ***********************************************/
+
+      // ----------------------
+      // Constants & State
+      // ----------------------
+      const STORAGE_KEY = "maros_sigap_extended_v1";
+      let reports = []; // array of report objects
+      let map = null;
+      let mapMarkers = {}; // id -> leaflet marker
+      let isAdmin = false;
+      let mapInitialized = false; // <-- important: defer init until page visible
+
+      // DOM refs
+      const pageIntro = document.getElementById("page-intro");
+      const pageMain = document.getElementById("page-main");
+      const pageSuccess = document.getElementById("page-success");
+      const startReportBtn = document.getElementById("startReport");
+      const howItWorksBtn = document.getElementById("howItWorks");
+      const gotoIntro = document.getElementById("gotoIntro");
+      const gotoMain = document.getElementById("gotoMain");
+      const adminToggle = document.getElementById("adminToggle");
+      const formReport = document.getElementById("formReport");
+      const listReports = document.getElementById("listReports");
+      const totalCount = document.getElementById("totalCount");
+      const detailCard = document.getElementById("detailCard");
+      const detailCategory = document.getElementById("detailCategory");
+      const detailDesc = document.getElementById("detailDesc");
+      const detailImg = document.getElementById("detailImg");
+      const detailMeta = document.getElementById("detailMeta");
+      const detailStatus = document.getElementById("detailStatus");
+      const btnMarkProcessing = document.getElementById("btnMarkProcessing");
+      const btnMarkDone = document.getElementById("btnMarkDone");
+      const btnDelete = document.getElementById("btnDelete");
+      const btnHomeFromSuccess = document.getElementById("btnHomeFromSuccess");
+      const btnViewReports = document.getElementById("btnViewReports");
+      const clearAllBtn = document.getElementById("clearAll");
+
+      // form inputs
+      const inpName = document.getElementById("inpName");
+      const inpCategory = document.getElementById("inpCategory");
+      const inpDesc = document.getElementById("inpDesc");
+      const inpPhoto = document.getElementById("inpPhoto");
+      const inpLat = document.getElementById("inpLat");
+      const inpLng = document.getElementById("inpLng");
+      const locateBtn = document.getElementById("locateBtn");
+      const pickManual = document.getElementById("pickManual");
+
+      // small helpers
+      function showPage(pageEl) {
+        [pageIntro, pageMain, pageSuccess].forEach((s) =>
+          s.classList.remove("active")
+        );
+        pageEl.classList.add("active");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        // Map fix: init when pageMain is first shown so Leaflet tiles render properly
+        if (pageEl === pageMain && !mapInitialized) {
+          initMap(); // initialize map now that container is visible
+          // give a tiny delay then invalidate size so tiles fill correctly
+          setTimeout(() => {
+            try {
+              map.invalidateSize();
+              // re-place markers now that map exists
+              placeMarkers();
+            } catch (e) {}
+          }, 250);
+          mapInitialized = true;
+        } else {
+          // if map already initialized, ensure tiles reflow after switching pages
+          if (map) {
+            setTimeout(() => {
+              try {
+                map.invalidateSize();
+              } catch (e) {}
+            }, 200);
+          }
+        }
+      }
+
+      // ----------------------
+      // Map initialization
+      // ----------------------
+      function initMap() {
+        // create the map only once
+        if (map) return;
+        map = L.map("map", { zoomControl: true }).setView(
+          [-5.1069, 119.4154],
+          12
+        ); // Maros-ish
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          maxZoom: 19,
+          attribution: "&copy; OpenStreetMap contributors",
+        }).addTo(map);
+
+        // sample POIs (fasilitas)
+        const facilities = [
+          { name: "Kantor Bupati Maros", coords: [-5.0032, 119.744] },
+          { name: "Taman Kota Maros", coords: [-5.0051, 119.7416] },
+          { name: "RSUD Salewangang", coords: [-5.0078, 119.7452] },
+        ];
+        facilities.forEach((f) =>
+          L.marker(f.coords).addTo(map).bindPopup(f.name)
+        );
+
+        // ensure map resizes on window resize
+        window.addEventListener("resize", () => {
+          try {
+            map.invalidateSize();
+          } catch (e) {}
+        });
+      }
+
+      // ----------------------
+      // Persistence (localStorage)
+      // ----------------------
+      function loadFromStorage() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        try {
+          reports = raw ? JSON.parse(raw) : [];
+        } catch (e) {
+          console.error("Error parsing storage, resetting.", e);
+          reports = [];
+        }
+        renderReportList();
+        // placeMarkers will run only if map exists; if not, markers will be placed after init
+        if (map) placeMarkers();
+      }
+
+      function saveToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+      }
+
+      // ----------------------
+      // Marker & List Rendering
+      // ----------------------
+      function clearAllMarkers() {
+        Object.values(mapMarkers).forEach((m) => {
+          try {
+            map.removeLayer(m);
+          } catch (e) {}
+        });
+        mapMarkers = {};
+      }
+
+      function placeMarkers() {
+        if (!map) return; // guard if map not inited yet
+        clearAllMarkers();
+        reports.forEach((r) => {
+          try {
+            const marker = L.marker([r.lat, r.lng])
+              .addTo(map)
+              .bindPopup(
+                `<b>${escapeHtml(r.category)}</b><br>${escapeHtml(
+                  truncate(r.description, 80)
+                )}`
+              );
+            marker.on("click", () => {
+              openDetailCard(r.id);
+            });
+            mapMarkers[r.id] = marker;
+          } catch (e) {
+            console.warn("Marker error", e);
+          }
+        });
+        totalCount.textContent = reports.length;
+      }
+
+      function renderReportList() {
+        listReports.innerHTML = "";
+        if (reports.length === 0) {
+          listReports.innerHTML =
+            '<div class="muted">Belum ada laporan. Coba kirim satu lewat form di atas.</div>';
+          totalCount.textContent = 0;
+          return;
+        }
+        reports.forEach((r) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "report-item mb-2";
+
+          const emoji = categoryToEmoji(r.category);
+          const left = document.createElement("div");
+          left.style.minWidth = "54px";
+          left.style.textAlign = "center";
+          left.innerHTML = `<div style="font-size:22px">${emoji}</div>`;
+
+          const middle = document.createElement("div");
+          middle.style.flex = "1";
+          middle.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-weight:700">${escapeHtml(r.category)}</div>
+            <div class="small-muted">${new Date(
+              r.createdAt
+            ).toLocaleString()}</div>
+          </div>
+          <div style="margin-top:6px;color:#083145">${escapeHtml(
+            truncate(r.description, 120)
+          )}</div>
+        `;
+
+          const right = document.createElement("div");
+          right.style.minWidth = "90px";
+          right.style.textAlign = "right";
+          const statusEl = document.createElement("div");
+          statusEl.style.marginBottom = "8px";
+          if (r.status === "Pending")
+            statusEl.innerHTML = '<span class="badge-pending">Pending</span>';
+          else if (r.status === "Diproses")
+            statusEl.innerHTML =
+              '<span class="badge-processing">Diproses</span>';
+          else statusEl.innerHTML = '<span class="badge-done">Selesai</span>';
+
+          const btnView = document.createElement("button");
+          btnView.className = "btn btn-sm btn-outline-primary";
+          btnView.textContent = "Detail";
+          btnView.onclick = () => {
+            // pan to marker and open detail
+            if (mapMarkers[r.id]) map.panTo([r.lat, r.lng], 15);
+            openDetailCard(r.id);
+          };
+
+          right.appendChild(statusEl);
+          right.appendChild(btnView);
+
+          wrapper.appendChild(left);
+          wrapper.appendChild(middle);
+          wrapper.appendChild(right);
+
+          // clicking the whole wrapper opens detail
+          wrapper.onclick = (ev) => {
+            // avoid double invoking when clicking the button
+            if (ev.target === btnView) return;
+            openDetailCard(r.id);
+          };
+
+          listReports.appendChild(wrapper);
+        });
+        totalCount.textContent = reports.length;
+      }
+
+      // ----------------------
+      // Detail Card (floating)
+      // ----------------------
+      let currentDetailId = null;
+      function openDetailCard(id) {
+        const r = reports.find((x) => x.id === id);
+        if (!r) return;
+        currentDetailId = id;
+        detailCategory.textContent = r.category;
+        detailDesc.textContent = r.description;
+        detailMeta.textContent = `oleh: ${r.name || "-"} • ${new Date(
+          r.createdAt
+        ).toLocaleString()}`;
+        // status badge
+        if (r.status === "Pending") {
+          detailStatus.style.background = "#f03e3e";
+          detailStatus.style.color = "white";
+          detailStatus.textContent = "Pending";
+        } else if (r.status === "Diproses") {
+          detailStatus.style.background = "#ff9f1c";
+          detailStatus.style.color = "white";
+          detailStatus.textContent = "Diproses";
+        } else {
+          detailStatus.style.background = "#28a745";
+          detailStatus.style.color = "white";
+          detailStatus.textContent = "Selesai";
+        }
+        if (r.photo) {
+          detailImg.src = r.photo;
+          detailImg.style.display = "block";
+        } else {
+          detailImg.style.display = "none";
+        }
+
+        // admin controls visibility
+        if (isAdmin) {
+          btnMarkProcessing.style.display = "inline-block";
+          btnMarkDone.style.display = "inline-block";
+          btnDelete.style.display = "inline-block";
+        } else {
+          btnMarkProcessing.style.display = "none";
+          btnMarkDone.style.display = "none";
+          btnDelete.style.display = "none";
+        }
+
+        detailCard.classList.add("active");
+        // auto-hide after 40s if not admin
+        if (!isAdmin) {
+          setTimeout(() => {
+            detailCard.classList.remove("active");
+          }, 40000);
+        }
+      }
+
+      function closeDetailCard() {
+        detailCard.classList.remove("active");
+        currentDetailId = null;
+      }
+
+      // ----------------------
+      // CRUD: Create report
+      // ----------------------
+      async function handleFormSubmit(e) {
+        e.preventDefault();
+        // read values
+        const name = inpName.value.trim();
+        const category = inpCategory.value;
+        const description = inpDesc.value.trim();
+        const lat = parseFloat(inpLat.value);
+        const lng = parseFloat(inpLng.value);
+        const photoFile = inpPhoto.files[0];
+
+        if (!category || !description || !isFinite(lat) || !isFinite(lng)) {
+          alert("Harap isi kategori, deskripsi, dan koordinat lokasi.");
+          return;
+        }
+
+        const photoData = await fileToDataURL(photoFile);
+
+        const newReport = {
+          id: "r" + Date.now(),
+          name: name || "",
+          category,
+          description,
+          lat,
+          lng,
+          photo: photoData || null,
+          status: "Pending", // Pending, Diproses, Selesai
+          createdAt: new Date().toISOString(),
+        };
+
+        reports.unshift(newReport);
+        saveToStorage();
+        renderReportList();
+        placeMarkers();
+
+        // reset form
+        formReport.reset();
+        showPage(pageSuccess);
+        // close any open detail
+        closeDetailCard();
+      }
+
+      // ----------------------
+      // Helpers & Utils
+      // ----------------------
+      function fileToDataURL(file) {
+        return new Promise((resolve) => {
+          if (!file) return resolve(null);
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function truncate(str, n) {
+        if (!str) return "";
+        return str.length > n ? str.slice(0, n - 1) + "…" : str;
+      }
+
+      function escapeHtml(text) {
+        if (!text) return "";
+        return text.replace(/[&<>"'`=\/]/g, function (s) {
+          return {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#39;",
+            "/": "&#x2F;",
+            "`": "&#x60;",
+            "=": "&#x3D;",
+          }[s];
+        });
+      }
+
+      function categoryToEmoji(cat) {
+        if (!cat) return "📍";
+        if (cat.toLowerCase().includes("jalan")) return "🚧";
+        if (cat.toLowerCase().includes("lampu")) return "💡";
+        if (cat.toLowerCase().includes("drain")) return "💦";
+        if (cat.toLowerCase().includes("sampah")) return "🗑️";
+        if (cat.toLowerCase().includes("fasil")) return "🏫";
+        return "🔎";
+      }
+
+      // ----------------------
+      // Admin & actions
+      // ----------------------
+      adminToggle.addEventListener("click", () => {
+        isAdmin = !isAdmin;
+        adminToggle.textContent = isAdmin ? "Admin: ON" : "Admin: OFF";
+        adminToggle.classList.toggle("btn-success", isAdmin);
+        // show detail controls if currently open
+        if (currentDetailId) openDetailCard(currentDetailId);
+      });
+
+      btnMarkProcessing.addEventListener("click", () => {
+        if (!currentDetailId) return;
+        updateReportStatus(currentDetailId, "Diproses");
+      });
+      btnMarkDone.addEventListener("click", () => {
+        if (!currentDetailId) return;
+        updateReportStatus(currentDetailId, "Selesai");
+      });
+      btnDelete.addEventListener("click", () => {
+        if (!currentDetailId) return;
+        if (!confirm("Hapus laporan ini? Tindakan tidak dapat dibatalkan."))
+          return;
+        deleteReport(currentDetailId);
+        closeDetailCard();
+      });
+
+      function updateReportStatus(id, newStatus) {
+        const idx = reports.findIndex((r) => r.id === id);
+        if (idx === -1) return;
+        reports[idx].status = newStatus;
+        saveToStorage();
+        renderReportList();
+        placeMarkers();
+        openDetailCard(id);
+      }
+
+      function deleteReport(id) {
+        reports = reports.filter((r) => r.id !== id);
+        saveToStorage();
+        renderReportList();
+        placeMarkers();
+      }
+
+      // ----------------------
+      // Map interactions (geolocation & manual pick)
+      // ----------------------
+      locateBtn.addEventListener("click", () => {
+        if (!map) {
+          alert(
+            'Map belum siap — buka halaman "Laporkan" dulu untuk inisialisasi map.'
+          );
+          return;
+        }
+        if (!navigator.geolocation) {
+          alert("Geolocation tidak didukung perangkat ini.");
+          return;
+        }
+        locateBtn.disabled = true;
+        locateBtn.textContent = "Mencari lokasi...";
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            inpLat.value = latitude.toFixed(6);
+            inpLng.value = longitude.toFixed(6);
+            map.setView([latitude, longitude], 15);
+            locateBtn.disabled = false;
+            locateBtn.textContent = "📍 Gunakan Lokasi Saya";
+          },
+          (err) => {
+            locateBtn.disabled = false;
+            locateBtn.textContent = "📍 Gunakan Lokasi Saya";
+            alert("Gagal mendapatkan lokasi: " + err.message);
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+
+      pickManual.addEventListener("click", () => {
+        if (!map) {
+          alert(
+            'Map belum siap — buka halaman "Laporkan" dulu untuk inisialisasi map.'
+          );
+          return;
+        }
+        alert(
+          "Klik 1x di peta untuk memilih lokasi laporan. Klik sekali lagi untuk membatalkan."
+        );
+        const handler = (ev) => {
+          // set lat/lng inputs
+          inpLat.value = ev.latlng.lat.toFixed(6);
+          inpLng.value = ev.latlng.lng.toFixed(6);
+          // show a temporary marker to indicate selection
+          const selMarker = L.circleMarker([ev.latlng.lat, ev.latlng.lng], {
+            radius: 8,
+            color: "#007bff",
+            fillColor: "#007bff",
+            fillOpacity: 0.8,
+          }).addTo(map);
+          setTimeout(() => map.removeLayer(selMarker), 4000);
+          map.off("click", handler);
+        };
+        map.on("click", handler);
+      });
+
+      // ----------------------
+      // Clear & reset
+      // ----------------------
+      clearAllBtn.addEventListener("click", () => {
+        if (!confirm("Reset semua data demo? (akan menghapus semua laporan)"))
+          return;
+        localStorage.removeItem(STORAGE_KEY);
+        reports = [];
+        renderReportList();
+        placeMarkers();
+      });
+
+      // ----------------------
+      // Misc UI bindings
+      // ----------------------
+      startReportBtn.addEventListener("click", () => showPage(pageMain));
+      howItWorksBtn.addEventListener("click", () => {
+        alert(
+          "Cara kerja singkat:\n1. Pilih lokasi di peta atau gunakan lokasi Anda.\n2. Isi form laporan dan unggah foto bila ada.\n3. Kirim laporan → tampil halaman sukses.\n4. Laporan tersimpan di demo lokal (localStorage)."
+        );
+      });
+      gotoIntro.addEventListener("click", () => showPage(pageIntro));
+      gotoMain.addEventListener("click", () => showPage(pageMain));
+      btnHomeFromSuccess.addEventListener("click", () => showPage(pageIntro));
+      btnViewReports.addEventListener("click", () => showPage(pageMain));
+
+      // form submit
+      formReport.addEventListener("submit", handleFormSubmit);
+
+      // hide detail when clicking outside
+      document.addEventListener("click", (ev) => {
+        const inside = detailCard.contains(ev.target);
+        const isButton =
+          ev.target.closest(".report-item") ||
+          ev.target.closest("#listReports");
+        if (!inside && !isButton) {
+          closeDetailCard();
+        }
+      });
+
+      // ----------------------
+      // Seed sample reports if empty (for demo)
+      // ----------------------
+      function seedIfEmpty() {
+        if (localStorage.getItem(STORAGE_KEY)) return;
+        const sample = [
+          {
+            id: "r" + (Date.now() - 1000 * 60 * 60 * 24),
+            name: "Andi",
+            category: "Jalan",
+            description:
+              "Jalan berlubang dekat pasar, sudah beberapa minggu, rawan kecelakaan terutama malam hari.",
+            lat: -5.0888,
+            lng: 119.4462,
+            photo: null,
+            status: "Pending",
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+          },
+          {
+            id: "r" + (Date.now() - 1000 * 60 * 60 * 3),
+            name: "Siti",
+            category: "Lampu",
+            description:
+              "Lampu jalan padam dari ujung gang sampai pertigaan besar.",
+            lat: -5.1173,
+            lng: 119.4205,
+            photo: null,
+            status: "Diproses",
+            createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+          },
+        ];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sample));
+      }
+
+      // ----------------------
+      // Utilities & init
+      // ----------------------
+      function init() {
+        seedIfEmpty();
+        loadFromStorage();
+        // Note: we DO NOT call initMap() here because #map is hidden initially.
+        // Map will be initialized when user navigates to pageMain (showPage triggers initMap).
+      }
+
+      // Expose some helpers to window for debugging (optional)
+      window._MAROS_SIGAP = {
+        getReports: () => reports,
+        clearStorage: () => {
+          localStorage.removeItem(STORAGE_KEY);
+          reports = [];
+          renderReportList();
+          placeMarkers();
+        },
+      };
+
+      // init app
+      init();
+    </script>
+  </body>
+</html>
